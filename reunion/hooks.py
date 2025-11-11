@@ -6,26 +6,28 @@ Hooks are used to configure app behavior in Frappe.
 See: https://frappeframework.com/docs/user/en/python-api/hooks
 """
 
-app_name = "frappe_app"
-app_title = "Frappe App Template"
-app_publisher = "Your Company"
+app_name = "reunion"
+app_title = "Gestion Réunions"
+app_publisher = "Business Architecte"
 app_description = "Template for Frappe applications"
-app_email = "hello@yourcompany.com"
+app_email = "logiciel@businessarchitecte.com"
 app_license = "MIT"
 
 # Includes in <head>
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/frappe_app/css/frappe_app.css"
-# app_include_js = "/assets/frappe_app/js/frappe_app.js"
+# app_include_css = "/assets/reunion/css/reunion.css"
+app_include_js = [
+    "/assets/reunion/js/google_calendar_fix.js"
+]
 
 # include js, css files in header of web template
-# web_include_css = "/assets/frappe_app/css/frappe_app.css"
-# web_include_js = "/assets/frappe_app/js/frappe_app.js"
+# web_include_css = "/assets/reunion/css/reunion.css"
+# web_include_js = "/assets/reunion/js/reunion.js"
 
 # include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "frappe_app/public/scss/website"
+# website_theme_scss = "reunion/public/scss/website"
 
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}

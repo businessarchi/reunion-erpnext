@@ -11,10 +11,10 @@ def get_data():
 	"""
 	return [
 		{
-			"module_name": "Frappe App",
+			"module_name": "Gestion Réunions",
 			"color": "grey",
 			"icon": "octicon octicon-file-directory",
 			"type": "module",
-			"label": _("Frappe App")
+			"label": _("Gestion Réunions")
 		}
 	]

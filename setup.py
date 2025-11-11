@@ -3,10 +3,10 @@ from setuptools import setup, find_packages
 with open("requirements.txt") as f:
 	install_requires = f.read().strip().split("\n")
 
-from frappe_app import __version__ as version
+from reunion import __version__ as version
 
 setup(
-	name="frappe_app",
+	name="reunion",
 	version=version,
 	description="Template for Frappe applications",
 	author="Your Name",

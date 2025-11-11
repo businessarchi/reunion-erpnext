@@ -4,7 +4,7 @@ Unit tests for utility functions
 
 import frappe
 import unittest
-from frappe_app.utils import ping
+from reunion.utils import ping
 
 
 class TestUtils(unittest.TestCase):

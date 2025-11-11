@@ -2,4 +2,4 @@
 # Format: module_name.path.to.patch_file
 
 # Example:
-# frappe_app.patches.v0_1.update_customer_status
+# reunion.patches.v0_1.update_customer_status

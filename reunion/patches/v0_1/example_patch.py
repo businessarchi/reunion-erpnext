@@ -3,7 +3,7 @@ Example Database Migration Patch
 
 This patch is executed once when migrating the database.
 Add this to patches.txt:
-frappe_app.patches.v0_1.example_patch
+reunion.patches.v0_1.example_patch
 """
 
 import frappe

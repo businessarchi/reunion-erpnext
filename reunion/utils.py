@@ -7,7 +7,7 @@ import frappe
 
 def get_app_version():
 	"""Get the current app version"""
-	from frappe_app import __version__
+	from reunion import __version__
 	return __version__
 
 

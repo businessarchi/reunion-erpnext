@@ -14,7 +14,7 @@ def get_permission_query_conditions(user):
 
 	This function is used in hooks.py like this:
 	permission_query_conditions = {
-		"Sample Doctype": "frappe_app.permissions.get_permission_query_conditions"
+		"Sample Doctype": "reunion.permissions.get_permission_query_conditions"
 	}
 
 	Args:
@@ -40,7 +40,7 @@ def has_permission(doc, ptype, user):
 
 	This function is used in hooks.py like this:
 	has_permission = {
-		"Sample Doctype": "frappe_app.permissions.has_permission"
+		"Sample Doctype": "reunion.permissions.has_permission"
 	}
 
 	Args:
@@ -81,7 +81,7 @@ def can_create_sample_doctype(user=None):
 	Check if a user can create a Sample Doctype.
 
 	Usage:
-		if frappe_app.permissions.can_create_sample_doctype():
+		if reunion.permissions.can_create_sample_doctype():
 			# Allow creation
 	"""
 	if not user:
