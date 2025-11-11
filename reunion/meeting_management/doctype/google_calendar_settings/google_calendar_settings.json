@@ -1,0 +1,140 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-11-11 14:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "section_break_2",
+  "client_id",
+  "client_secret",
+  "column_break_4",
+  "calendar_id",
+  "section_break_6",
+  "access_token",
+  "refresh_token",
+  "token_expiry",
+  "column_break_10",
+  "sync_status",
+  "last_sync",
+  "sync_from_google",
+  "sync_to_google"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Activer Google Calendar"
+  },
+  {
+   "fieldname": "section_break_2",
+   "fieldtype": "Section Break",
+   "label": "Configuration OAuth"
+  },
+  {
+   "fieldname": "client_id",
+   "fieldtype": "Data",
+   "label": "Client ID",
+   "reqd": 1
+  },
+  {
+   "fieldname": "client_secret",
+   "fieldtype": "Password",
+   "label": "Client Secret",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_4",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "primary",
+   "description": "ID du calendrier Google \u00e0 synchroniser (ex: primary ou votre email)",
+   "fieldname": "calendar_id",
+   "fieldtype": "Data",
+   "label": "Calendar ID"
+  },
+  {
+   "fieldname": "section_break_6",
+   "fieldtype": "Section Break",
+   "label": "Tokens OAuth (g\u00e9n\u00e9r\u00e9s automatiquement)"
+  },
+  {
+   "fieldname": "access_token",
+   "fieldtype": "Password",
+   "label": "Access Token",
+   "read_only": 1
+  },
+  {
+   "fieldname": "refresh_token",
+   "fieldtype": "Password",
+   "label": "Refresh Token",
+   "read_only": 1
+  },
+  {
+   "fieldname": "token_expiry",
+   "fieldtype": "Datetime",
+   "label": "Token Expiry",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_10",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Non connect\u00e9",
+   "fieldname": "sync_status",
+   "fieldtype": "Select",
+   "label": "Statut de synchronisation",
+   "options": "Non connect\u00e9\\nConnect\u00e9\\nErreur",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sync",
+   "fieldtype": "Datetime",
+   "label": "Derni\u00e8re synchronisation",
+   "read_only": 1
+  },
+  {
+   "default": "1",
+   "description": "Importer les \u00e9v\u00e9nements de Google Calendar vers ERPNext",
+   "fieldname": "sync_from_google",
+   "fieldtype": "Check",
+   "label": "Synchroniser depuis Google"
+  },
+  {
+   "default": "1",
+   "description": "Exporter les r\u00e9unions ERPNext vers Google Calendar",
+   "fieldname": "sync_to_google",
+   "fieldtype": "Check",
+   "label": "Synchroniser vers Google"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2025-11-11 14:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Meeting Management",
+ "name": "Google Calendar Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
