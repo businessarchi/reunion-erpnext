@@ -1,0 +1,11 @@
+[
+ {
+  "doctype": "Custom Field",
+  "dt": "Customer",
+  "fieldname": "custom_reference",
+  "label": "Custom Reference",
+  "fieldtype": "Data",
+  "insert_after": "customer_name",
+  "description": "Example custom field added by Frappe App"
+ }
+]

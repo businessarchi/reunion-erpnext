@@ -1,0 +1,83 @@
+{% extends "templates/web.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block page_content %}
+<div class="container mt-5">
+	<div class="row">
+		<div class="col-md-12">
+			<h1>{{ title }}</h1>
+			<p class="lead">{{ description }}</p>
+
+			{% if user_email %}
+			<div class="alert alert-info">
+				<strong>Welcome!</strong> You are logged in as {{ user_email }}
+			</div>
+			{% endif %}
+
+			<div class="card mt-4">
+				<div class="card-body">
+					<h5 class="card-title">Custom Data</h5>
+					<p>{{ custom_data.page_info }}</p>
+					<p><strong>Total Items:</strong> {{ custom_data.total_count }}</p>
+				</div>
+			</div>
+
+			<h3 class="mt-5">Active Items</h3>
+
+			{% if items %}
+			<div class="row mt-3">
+				{% for item in items %}
+				<div class="col-md-4 mb-3">
+					<div class="card">
+						<div class="card-body">
+							<h5 class="card-title">{{ item.title or item.name }}</h5>
+							<p class="card-text">{{ item.description or 'No description' }}</p>
+							<a href="/app/sample-doctype/{{ item.name }}" class="btn btn-primary btn-sm">
+								View Details
+							</a>
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+			{% else %}
+			<div class="alert alert-warning mt-3">
+				No active items found.
+			</div>
+			{% endif %}
+		</div>
+	</div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+	// Custom JavaScript for this page
+	$(document).ready(function() {
+		console.log('Example page loaded');
+
+		// Example: Make an API call
+		frappe.call({
+			method: 'frappe_app.utils.ping',
+			callback: function(r) {
+				console.log('API Response:', r.message);
+			}
+		});
+	});
+</script>
+{% endblock %}
+
+{% block style %}
+<style>
+	/* Custom CSS for this page */
+	.card {
+		transition: transform 0.2s;
+	}
+
+	.card:hover {
+		transform: translateY(-5px);
+		box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+	}
+</style>
+{% endblock %}

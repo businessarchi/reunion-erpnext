@@ -1,0 +1,215 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                                                               ║
+║        🚀 FRAPPE APP TEMPLATE - MODÈLE COMPLET 🚀            ║
+║                                                               ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📦 CONTENU DU TEMPLATE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ Structure complète d'une application Frappe
+✅ 35+ fichiers prêts à l'emploi
+✅ Exemples de code commentés
+✅ Documentation complète en français
+✅ Tests unitaires
+✅ Script de renommage automatique
+
+📁 STRUCTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fichiers principaux :
+├── README.md                     Documentation principale
+├── QUICK_START.md               Guide démarrage rapide
+├── FRAPPE_APP_TEMPLATE.md       Documentation détaillée
+├── STRUCTURE.md                  Arborescence complète
+├── CONTRIBUTING.md               Guide de contribution
+├── CHANGELOG.md                  Journal des modifications
+├── rename_app.py                 Script de renommage
+│
+├── setup.py                      Configuration Python
+├── pyproject.toml                Config Python moderne
+├── requirements.txt              Dépendances
+├── MANIFEST.in                   Inclusion package
+├── .gitignore                    Exclusions Git
+└── .editorconfig                 Config éditeur
+
+Module frappe_app/ :
+├── __init__.py                   Version app
+├── hooks.py                      ⭐ Configuration centrale
+├── modules.txt                   Liste modules
+├── patches.txt                   Liste patches
+├── install.py                    Installation
+├── tasks.py                      Tâches planifiées
+├── utils.py                      Utilitaires & API
+├── permissions.py                Permissions custom
+│
+├── config/
+│   ├── desktop.py               Icônes bureau
+│   └── docs.py                  Config documentation
+│
+├── frappe_app/
+│   └── doctype/
+│       └── sample_doctype/      📋 Exemple DocType complet
+│           ├── sample_doctype.json
+│           ├── sample_doctype.py
+│           └── test_sample_doctype.py
+│
+├── public/
+│   ├── js/
+│   │   ├── frappe_app.bundle.js
+│   │   ├── doctype_example.js
+│   │   └── list_view_example.js
+│   └── css/
+│       └── frappe_app.css
+│
+├── templates/
+│   ├── pages/                   Templates pages
+│   └── includes/                Includes réutilisables
+│
+├── www/
+│   ├── example-page.py          🌐 Page web exemple
+│   └── example-page.html
+│
+├── fixtures/
+│   └── custom_field.json        Fixture exemple
+│
+├── patches/
+│   └── v0_1/
+│       └── example_patch.py     Patch migration
+│
+└── tests/
+    └── test_utils.py            Tests unitaires
+
+📊 STATISTIQUES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fichiers Python         : 16
+Fichiers JavaScript     : 3
+Fichiers JSON           : 2
+Fichiers HTML           : 1
+Fichiers CSS            : 1
+Documentation Markdown  : 6
+Configuration           : 6
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TOTAL                   : ~35 fichiers
+
+🔧 FONCTIONNALITÉS INCLUSES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ DocType complet avec controller Python
+✓ Tests unitaires (pytest compatible)
+✓ Scripts client JavaScript (formulaire & liste)
+✓ Page web publique avec template Jinja2
+✓ Système de permissions personnalisées
+✓ Tâches planifiées (scheduler)
+✓ API endpoints whitelisted
+✓ Fixtures pour données initiales
+✓ Patches de migration de base de données
+✓ Scripts d'installation/désinstallation
+✓ Configuration du bureau ERPNext
+✓ Tous les hooks Frappe documentés
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. README.md
+   → Présentation générale du template
+   → Installation rapide
+   → Liens vers les autres docs
+
+2. QUICK_START.md
+   → Guide pas-à-pas détaillé
+   → Personnalisation de l'app
+   → Création de DocTypes
+   → Exemples de code
+
+3. FRAPPE_APP_TEMPLATE.md
+   → Documentation complète de la structure
+   → Explication de chaque fichier
+   → Hooks disponibles
+   → Bonnes pratiques
+
+4. STRUCTURE.md
+   → Arborescence complète avec descriptions
+   → Tableau des fichiers
+   → Statistiques du template
+
+5. CONTRIBUTING.md
+   → Guide pour contribuer
+   → Standards de code
+   → Processus de PR
+
+6. CHANGELOG.md
+   → Historique des versions
+   → Liste des fonctionnalités
+
+🚀 DÉMARRAGE RAPIDE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Cloner le template :
+   git clone https://github.com/[repo]/modele-frappe.git mon_app
+   cd mon_app
+
+2. Renommer automatiquement :
+   python rename_app.py mon_app "Mon App" "Ma Société" "email@exemple.com"
+
+3. Installer sur Frappe :
+   bench get-app /path/to/mon_app
+   bench --site monsite.local install-app mon_app
+   bench start
+
+🛠️ COMMANDES UTILES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+bench start                  Démarrer le serveur
+bench migrate                Migrer la base de données
+bench clear-cache            Vider le cache
+bench build                  Compiler les assets
+bench console                Console Python interactive
+bench run-tests              Lancer les tests
+
+📝 FICHIERS CLÉS À PERSONNALISER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Priority 1 (Essentiel) :
+  1. pyproject.toml          Nom, auteur, description
+  2. setup.py                Métadonnées package
+  3. hooks.py                app_name, app_title, etc.
+  4. __init__.py             Version de l'app
+  5. modules.txt             Noms de vos modules
+
+Priority 2 (Recommandé) :
+  6. README.md               Documentation de votre app
+  7. desktop.py              Icône et couleur du module
+  8. docs.py                 Lien vers votre documentation
+
+🎯 PROCHAINES ÉTAPES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. ✓ Cloner ce template
+2. ✓ Renommer avec rename_app.py
+3. ▢ Créer vos modules dans modules.txt
+4. ▢ Créer vos DocTypes
+5. ▢ Implémenter votre logique métier
+6. ▢ Ajouter des tests
+7. ▢ Documenter votre code
+8. ▢ Tester et déployer
+
+💡 RESSOURCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Documentation Frappe  : https://frappeframework.com/docs
+API Reference         : https://frappeframework.com/docs/user/en/api
+Forum Frappe          : https://discuss.frappe.io
+GitHub Frappe         : https://github.com/frappe/frappe
+
+📄 LICENCE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MIT License - Voir LICENSE pour plus de détails
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+         Développé avec ❤️ pour la communauté Frappe
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

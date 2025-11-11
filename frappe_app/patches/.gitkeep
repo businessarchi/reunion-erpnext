@@ -1,0 +1,2 @@
+# Directory for database migration patches
+# Example: frappe_app/patches/v0_1/update_customer_status.py
