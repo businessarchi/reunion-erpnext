@@ -54,10 +54,12 @@ def get_authorization_url():
 			redirect_uri=redirect_uri
 		)
 
+		# Paramètres OAuth - Simplifiés pour éviter erreur 400
+		# prompt='consent' peut causer erreur 400 si OAuth Consent Screen mal configuré
 		authorization_url, state = flow.authorization_url(
 			access_type='offline',
-			include_granted_scopes='true',
-			prompt='consent'
+			include_granted_scopes='true'
+			# Removed prompt='consent' - will only ask for consent on first authorization
 		)
 
 		# Stocker le state pour validation
