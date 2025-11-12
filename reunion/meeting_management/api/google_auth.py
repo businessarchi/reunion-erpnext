@@ -92,13 +92,20 @@ def handle_oauth_callback(code=None, state=None, error=None):
 		Redirect vers Google Calendar Settings
 	"""
 	try:
+		# Log pour debug
+		frappe.logger().info(f"OAuth Callback received - code: {'present' if code else 'missing'}, error: {error}")
+
 		if error:
+			frappe.log_error(f"OAuth error from Google: {error}", "Google OAuth - Error from Google")
 			frappe.local.response["type"] = "redirect"
 			frappe.local.response["location"] = f"/app/google-calendar-settings?error={error}"
 			return
 
 		if not code:
-			frappe.throw(_("Code d'autorisation manquant"))
+			frappe.log_error("No authorization code received", "Google OAuth - Missing Code")
+			frappe.local.response["type"] = "redirect"
+			frappe.local.response["location"] = "/app/google-calendar-settings?error=no_code"
+			return
 
 		# Valider le state (protection CSRF)
 		# Note: En production, valider le state stocké
@@ -139,14 +146,19 @@ def handle_oauth_callback(code=None, state=None, error=None):
 
 		frappe.db.commit()
 
+		# Log success
+		frappe.logger().info(f"OAuth tokens saved successfully for user")
+
 		# Rediriger vers la page de settings
 		frappe.local.response["type"] = "redirect"
 		frappe.local.response["location"] = "/app/google-calendar-settings?success=1"
 
 	except Exception as e:
+		error_msg = str(e)
 		frappe.log_error(frappe.get_traceback(), "Google OAuth - Handle Callback Error")
+		frappe.logger().error(f"OAuth callback failed: {error_msg}")
 		frappe.local.response["type"] = "redirect"
-		frappe.local.response["location"] = f"/app/google-calendar-settings?error={str(e)}"
+		frappe.local.response["location"] = f"/app/google-calendar-settings?error={error_msg}"
 
 
 @frappe.whitelist()
