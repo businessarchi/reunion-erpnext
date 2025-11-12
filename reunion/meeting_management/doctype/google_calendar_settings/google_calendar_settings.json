@@ -89,7 +89,7 @@
    "fieldname": "sync_status",
    "fieldtype": "Select",
    "label": "Statut de synchronisation",
-   "options": "Non connect\u00e9\\nConnect\u00e9\\nErreur",
+   "options": "Non connecté\nConnecté\nErreur",
    "read_only": 1
   },
   {
