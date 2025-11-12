@@ -15,10 +15,8 @@ from datetime import datetime, timedelta
 
 
 # Scopes requis pour Google Calendar
-SCOPES = [
-	'https://www.googleapis.com/auth/calendar',  # Accès complet au calendrier
-	'https://www.googleapis.com/auth/calendar.events'  # Accès aux événements
-]
+# Note: calendar inclut déjà calendar.events, pas besoin des deux
+SCOPES = ['https://www.googleapis.com/auth/calendar']
 
 
 @frappe.whitelist()
