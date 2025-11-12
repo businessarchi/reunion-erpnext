@@ -128,6 +128,12 @@ def handle_oauth_callback(code=None, state=None, error=None):
 			redirect_uri=redirect_uri
 		)
 
+		# Désactiver la vérification stricte des scopes
+		# Google peut retourner plus de scopes que demandés si le Client ID a été utilisé
+		# avec OAuth Playground ou d'autres applications
+		import os
+		os.environ['OAUTHLIB_RELAX_TOKEN_SCOPE'] = '1'
+
 		flow.fetch_token(code=code)
 		credentials = flow.credentials
 
