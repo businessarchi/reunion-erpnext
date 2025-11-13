@@ -244,9 +244,9 @@ def sync_event_to_erpnext(google_event, calendar_id):
 	try:
 		# Extraire les données de l'événement Google
 		google_event_id = google_event.get('id')
-		summary = google_event.get('summary', 'Sans titre')
-		description = google_event.get('description', '')
-		location = google_event.get('location', '')
+		summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
+		description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
+		location = google_event.get('location', '')[:140]
 
 		# Gérer les dates (événements all-day vs avec heure)
 		start = google_event.get('start', {})
@@ -297,9 +297,11 @@ def sync_event_to_erpnext(google_event, calendar_id):
 		frappe.db.commit()
 
 	except Exception as e:
+		# Tronquer l'ID pour éviter que le titre soit trop long (max 140 chars)
+		event_id = str(google_event.get('id', 'unknown'))[:50]
 		frappe.log_error(
 			frappe.get_traceback(),
-			f"Google Calendar - Sync Event Error: {google_event.get('id')}"
+			f"GCal Sync Event Error: {event_id}"
 		)
 
 
@@ -314,8 +316,8 @@ def sync_event_to_task(google_event, calendar_id):
 	try:
 		# Extraire les données de l'événement Google
 		google_event_id = google_event.get('id')
-		summary = google_event.get('summary', 'Sans titre')
-		description = google_event.get('description', '')
+		summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
+		description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
 
 		# Gérer les dates
 		start = google_event.get('start', {})
@@ -359,9 +361,11 @@ def sync_event_to_task(google_event, calendar_id):
 		frappe.db.commit()
 
 	except Exception as e:
+		# Tronquer l'ID pour éviter que le titre soit trop long (max 140 chars)
+		event_id = str(google_event.get('id', 'unknown'))[:50]
 		frappe.log_error(
 			frappe.get_traceback(),
-			f"Google Calendar - Sync Task Error: {google_event.get('id')}"
+			f"GCal Sync Task Error: {event_id}"
 		)
 
 
