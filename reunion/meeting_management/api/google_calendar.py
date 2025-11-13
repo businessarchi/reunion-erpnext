@@ -21,9 +21,13 @@ def get_calendar_info():
 		dict: {"success": bool, "calendar": dict, "message": str}
 	"""
 	try:
+		frappe.logger().info("get_calendar_info called")
 		credentials = get_credentials()
 
+		frappe.logger().info(f"get_calendar_info - credentials: {credentials is not None}")
+
 		if not credentials:
+			frappe.log_error("No credentials returned from get_credentials()", "Google Calendar - No Credentials")
 			return {
 				"success": False,
 				"message": _("Non connecté à Google Calendar")
@@ -67,9 +71,13 @@ def list_calendars():
 		dict: {"success": bool, "calendars": list, "message": str}
 	"""
 	try:
+		frappe.logger().info("list_calendars called")
 		credentials = get_credentials()
 
+		frappe.logger().info(f"list_calendars - credentials: {credentials is not None}")
+
 		if not credentials:
+			frappe.log_error("No credentials returned from get_credentials()", "Google Calendar - No Credentials List")
 			return {
 				"success": False,
 				"message": _("Non connecté à Google Calendar")
