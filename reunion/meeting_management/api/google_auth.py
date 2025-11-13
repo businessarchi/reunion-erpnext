@@ -215,16 +215,33 @@ def get_credentials():
 	try:
 		settings = frappe.get_doc("Google Calendar Settings", "Google Calendar Settings")
 
+		frappe.logger().info(f"get_credentials - enabled: {settings.enabled}")
+		frappe.logger().info(f"get_credentials - has access_token: {bool(settings.access_token)}")
+		frappe.logger().info(f"get_credentials - has refresh_token: {bool(settings.refresh_token)}")
+
 		if not settings.enabled:
+			frappe.logger().warning("Google Calendar not enabled")
 			return None
 
 		if not settings.access_token or not settings.refresh_token:
+			frappe.logger().warning(f"Missing tokens - access: {bool(settings.access_token)}, refresh: {bool(settings.refresh_token)}")
+			return None
+
+		# Récupérer les tokens déchiffrés
+		access_token = settings.get_password("access_token")
+		refresh_token = settings.get_password("refresh_token")
+
+		frappe.logger().info(f"get_credentials - decrypted access_token: {bool(access_token)}")
+		frappe.logger().info(f"get_credentials - decrypted refresh_token: {bool(refresh_token)}")
+
+		if not access_token or not refresh_token:
+			frappe.logger().error("Failed to decrypt tokens")
 			return None
 
 		# Créer les credentials
 		credentials = Credentials(
-			token=settings.get_password("access_token"),
-			refresh_token=settings.get_password("refresh_token"),
+			token=access_token,
+			refresh_token=refresh_token,
 			token_uri="https://oauth2.googleapis.com/token",
 			client_id=settings.client_id,
 			client_secret=settings.get_password("client_secret"),
