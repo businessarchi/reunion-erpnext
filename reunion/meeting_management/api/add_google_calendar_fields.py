@@ -9,6 +9,7 @@ import frappe
 def add_custom_fields():
 	"""Ajoute les custom fields pour la synchronisation Google Calendar"""
 	from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
+	from frappe.model.meta import get_meta
 
 	# D'abord, supprimer les custom fields existants en utilisant SQL direct
 	doctypes = ['Event', 'Task']
@@ -28,9 +29,16 @@ def add_custom_fields():
 
 	frappe.db.commit()
 
-	# Vider le cache pour forcer le rechargement des métadonnées
-	frappe.clear_cache(doctype='Event')
-	frappe.clear_cache(doctype='Task')
+	# Vider le cache complet
+	frappe.clear_cache()
+
+	# Forcer la suppression du cache de métadonnées pour Event et Task
+	for doctype in doctypes:
+		cache_key = f"doctype_meta:{doctype}"
+		frappe.cache().delete_value(cache_key)
+		print(f"✓ Cleared meta cache for {doctype}")
+
+	print("✓ Cache cleared and meta refreshed")
 
 	# Custom fields pour Event et Task
 	custom_fields = {
@@ -76,7 +84,35 @@ def add_custom_fields():
 		]
 	}
 
-	# Utiliser la fonction create_custom_fields qui gère automatiquement la migration
+	# Vérifier si les colonnes existent et les ajouter manuellement si nécessaire
+	for doctype, table_name in [('Event', 'tabEvent'), ('Task', 'tabTask')]:
+		for fieldname in ['google_event_id', 'google_calendar_id']:
+			try:
+				# Vérifier si la colonne existe
+				result = frappe.db.sql(f"""
+					SELECT COLUMN_NAME
+					FROM INFORMATION_SCHEMA.COLUMNS
+					WHERE TABLE_SCHEMA = %s
+					AND TABLE_NAME = %s
+					AND COLUMN_NAME = %s
+				""", (frappe.conf.db_name, table_name, fieldname))
+
+				if not result:
+					# La colonne n'existe pas, l'ajouter
+					print(f"⚠ Column {table_name}.{fieldname} does not exist, adding it...")
+					frappe.db.sql(f"""
+						ALTER TABLE `{table_name}`
+						ADD COLUMN `{fieldname}` VARCHAR(140)
+					""")
+					print(f"✓ Added column {table_name}.{fieldname}")
+				else:
+					print(f"✓ Column {table_name}.{fieldname} already exists")
+			except Exception as e:
+				print(f"⚠ Error checking/adding column {table_name}.{fieldname}: {str(e)}")
+
+	frappe.db.commit()
+
+	# Maintenant créer les Custom Field docs
 	create_custom_fields(custom_fields, update=True)
 
 	frappe.db.commit()
