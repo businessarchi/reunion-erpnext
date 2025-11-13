@@ -137,10 +137,10 @@ def handle_oauth_callback(code=None, state=None, error=None):
 		flow.fetch_token(code=code)
 		credentials = flow.credentials
 
-		# Sauvegarder les tokens
-		settings.access_token = credentials.token
-		settings.refresh_token = credentials.refresh_token
+		# Récupérer à nouveau le doc pour être sûr d'avoir la dernière version
+		settings = frappe.get_doc("Google Calendar Settings", "Google Calendar Settings")
 
+		# Sauvegarder les tokens et le statut
 		if credentials.expiry:
 			settings.token_expiry = credentials.expiry
 		else:
@@ -148,8 +148,12 @@ def handle_oauth_callback(code=None, state=None, error=None):
 			settings.token_expiry = datetime.now() + timedelta(hours=1)
 
 		settings.sync_status = "Connecté"
-		settings.save(ignore_permissions=True)
 
+		# Pour les champs Password, on doit utiliser set_value AVANT le save
+		settings.access_token = credentials.token
+		settings.refresh_token = credentials.refresh_token
+
+		settings.save(ignore_permissions=True)
 		frappe.db.commit()
 
 		# Log success
