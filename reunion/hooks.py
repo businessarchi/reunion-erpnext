@@ -143,9 +143,9 @@ after_install = "reunion.meeting_management.api.add_google_calendar_fields.add_c
 # ---------------
 
 scheduler_events = {
-	# Synchronisation Google Calendar toutes les 15 minutes
+	# Synchronisation Google Calendar toutes les 6 heures
 	"cron": {
-		"*/15 * * * *": [
+		"0 */6 * * *": [
 			"reunion.meeting_management.api.google_calendar.sync_bidirectional"
 		]
 	}
