@@ -77,7 +77,7 @@ app_include_js = [
 # ------------
 
 # before_install = "frappe_app.install.before_install"
-# after_install = "frappe_app.install.after_install"
+after_install = "reunion.meeting_management.api.add_google_calendar_fields.add_custom_fields"
 
 # Uninstallation
 # ------------

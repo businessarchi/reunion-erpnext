@@ -118,9 +118,10 @@ def list_calendars():
 def sync_from_google():
 	"""
 	Importe les événements de Google Calendar vers ERPNext
+	Synchronise tous les calendriers configurés vers leurs DocTypes respectifs (Event ou Task)
 
 	Returns:
-		dict: {"success": bool, "events_synced": int, "message": str}
+		dict: {"success": bool, "events_synced": int, "tasks_synced": int, "message": str}
 	"""
 	try:
 		credentials = get_credentials()
@@ -133,39 +134,61 @@ def sync_from_google():
 
 		settings = frappe.get_doc("Google Calendar Settings", "Google Calendar Settings")
 
-		if not settings.sync_from_google:
+		# Vérifier qu'il y a des calendriers configurés
+		if not settings.calendars_to_sync:
 			return {
 				"success": False,
-				"message": _("La synchronisation depuis Google est désactivée")
+				"message": _("Aucun calendrier configuré. Cliquez sur 'Charger les calendriers' d'abord.")
 			}
 
 		# Construire le service Google Calendar API
 		service = build('calendar', 'v3', credentials=credentials)
 
-		# Récupérer les événements des 30 derniers jours
+		# Récupérer les événements des 30 derniers jours et 90 jours à venir
 		now = datetime.utcnow()
 		time_min = (now - timedelta(days=30)).isoformat() + 'Z'
 		time_max = (now + timedelta(days=90)).isoformat() + 'Z'
 
-		calendar_id = settings.calendar_id or "primary"
+		total_events_synced = 0
+		total_tasks_synced = 0
+		calendars_processed = 0
 
-		events_result = service.events().list(
-			calendarId=calendar_id,
-			timeMin=time_min,
-			timeMax=time_max,
-			maxResults=100,
-			singleEvents=True,
-			orderBy='startTime'
-		).execute()
+		# Parcourir chaque calendrier configuré
+		for cal_config in settings.calendars_to_sync:
+			if not cal_config.enabled:
+				continue
 
-		events = events_result.get('items', [])
-		events_synced = 0
+			try:
+				# Récupérer les événements de ce calendrier
+				events_result = service.events().list(
+					calendarId=cal_config.calendar_id,
+					timeMin=time_min,
+					timeMax=time_max,
+					maxResults=100,
+					singleEvents=True,
+					orderBy='startTime'
+				).execute()
 
-		# TODO: Créer les événements dans ERPNext
-		# Cela nécessitera le doctype Meeting/Réunion
-		for event in events:
-			# Pour l'instant, on compte juste les événements
-			events_synced += 1
+				events = events_result.get('items', [])
+
+				# Synchroniser chaque événement vers le DocType configuré
+				for event in events:
+					if cal_config.sync_to_doctype == "Event":
+						sync_event_to_erpnext(event, cal_config.calendar_id)
+						total_events_synced += 1
+					elif cal_config.sync_to_doctype == "Task":
+						sync_event_to_task(event, cal_config.calendar_id)
+						total_tasks_synced += 1
+
+				calendars_processed += 1
+
+			except Exception as e:
+				frappe.log_error(
+					frappe.get_traceback(),
+					f"Google Calendar - Sync Error for {cal_config.calendar_id}"
+				)
+				# Continue avec les autres calendriers même si un échoue
+				continue
 
 		# Mettre à jour la date de dernière synchronisation
 		settings.last_sync = datetime.now()
@@ -173,10 +196,23 @@ def sync_from_google():
 		settings.save(ignore_permissions=True)
 		frappe.db.commit()
 
+		message_parts = []
+		if total_events_synced > 0:
+			message_parts.append(f"{total_events_synced} événement(s)")
+		if total_tasks_synced > 0:
+			message_parts.append(f"{total_tasks_synced} tâche(s)")
+
+		message = _("Synchronisation réussie: {0} depuis {1} calendrier(s)").format(
+			" et ".join(message_parts) if message_parts else "0 éléments",
+			calendars_processed
+		)
+
 		return {
 			"success": True,
-			"events_synced": events_synced,
-			"message": _("{0} événements trouvés dans Google Calendar").format(events_synced)
+			"events_synced": total_events_synced,
+			"tasks_synced": total_tasks_synced,
+			"calendars_processed": calendars_processed,
+			"message": message
 		}
 
 	except Exception as e:
@@ -195,6 +231,138 @@ def sync_from_google():
 			"success": False,
 			"message": str(e)
 		}
+
+
+def sync_event_to_erpnext(google_event, calendar_id):
+	"""
+	Synchronise un événement Google Calendar vers le DocType Event d'ERPNext
+
+	Args:
+		google_event: Événement Google Calendar (dict)
+		calendar_id: ID du calendrier source
+	"""
+	try:
+		# Extraire les données de l'événement Google
+		google_event_id = google_event.get('id')
+		summary = google_event.get('summary', 'Sans titre')
+		description = google_event.get('description', '')
+		location = google_event.get('location', '')
+
+		# Gérer les dates (événements all-day vs avec heure)
+		start = google_event.get('start', {})
+		end = google_event.get('end', {})
+
+		if 'dateTime' in start:
+			starts_on = start['dateTime']
+			ends_on = end['dateTime']
+			all_day = 0
+		else:
+			starts_on = start['date'] + ' 00:00:00'
+			ends_on = end['date'] + ' 23:59:59'
+			all_day = 1
+
+		# Vérifier si l'événement existe déjà (par google_event_id)
+		existing = frappe.db.exists('Event', {
+			'google_event_id': google_event_id,
+			'google_calendar_id': calendar_id
+		})
+
+		if existing:
+			# Mettre à jour l'événement existant
+			event_doc = frappe.get_doc('Event', existing)
+			event_doc.subject = summary
+			event_doc.description = description
+			event_doc.location = location
+			event_doc.starts_on = starts_on
+			event_doc.ends_on = ends_on
+			event_doc.all_day = all_day
+			event_doc.save(ignore_permissions=True)
+		else:
+			# Créer un nouvel événement
+			event_doc = frappe.get_doc({
+				'doctype': 'Event',
+				'subject': summary,
+				'description': description,
+				'location': location,
+				'starts_on': starts_on,
+				'ends_on': ends_on,
+				'all_day': all_day,
+				'google_event_id': google_event_id,
+				'google_calendar_id': calendar_id,
+				'event_type': 'Public',  # Par défaut
+				'status': 'Open'
+			})
+			event_doc.insert(ignore_permissions=True)
+
+		frappe.db.commit()
+
+	except Exception as e:
+		frappe.log_error(
+			frappe.get_traceback(),
+			f"Google Calendar - Sync Event Error: {google_event.get('id')}"
+		)
+
+
+def sync_event_to_task(google_event, calendar_id):
+	"""
+	Synchronise un événement Google Calendar vers le DocType Task d'ERPNext
+
+	Args:
+		google_event: Événement Google Calendar (dict)
+		calendar_id: ID du calendrier source
+	"""
+	try:
+		# Extraire les données de l'événement Google
+		google_event_id = google_event.get('id')
+		summary = google_event.get('summary', 'Sans titre')
+		description = google_event.get('description', '')
+
+		# Gérer les dates
+		start = google_event.get('start', {})
+		end = google_event.get('end', {})
+
+		if 'dateTime' in start:
+			exp_start_date = start['dateTime'].split('T')[0]
+			exp_end_date = end['dateTime'].split('T')[0]
+		else:
+			exp_start_date = start['date']
+			exp_end_date = end['date']
+
+		# Vérifier si la tâche existe déjà
+		existing = frappe.db.exists('Task', {
+			'google_event_id': google_event_id,
+			'google_calendar_id': calendar_id
+		})
+
+		if existing:
+			# Mettre à jour la tâche existante
+			task_doc = frappe.get_doc('Task', existing)
+			task_doc.subject = summary
+			task_doc.description = description
+			task_doc.exp_start_date = exp_start_date
+			task_doc.exp_end_date = exp_end_date
+			task_doc.save(ignore_permissions=True)
+		else:
+			# Créer une nouvelle tâche
+			task_doc = frappe.get_doc({
+				'doctype': 'Task',
+				'subject': summary,
+				'description': description,
+				'exp_start_date': exp_start_date,
+				'exp_end_date': exp_end_date,
+				'google_event_id': google_event_id,
+				'google_calendar_id': calendar_id,
+				'status': 'Open'
+			})
+			task_doc.insert(ignore_permissions=True)
+
+		frappe.db.commit()
+
+	except Exception as e:
+		frappe.log_error(
+			frappe.get_traceback(),
+			f"Google Calendar - Sync Task Error: {google_event.get('id')}"
+		)
 
 
 @frappe.whitelist()
