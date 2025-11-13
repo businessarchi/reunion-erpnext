@@ -3,6 +3,11 @@
 
 frappe.ui.form.on('Google Calendar Settings', {
 	refresh: function(frm) {
+		// Bouton Setup (toujours visible pour debug)
+		frm.add_custom_button(__('🔧 Setup Custom Fields'), function() {
+			setup_custom_fields(frm);
+		}, __('Admin'));
+
 		// Ajouter le bouton de connexion Google
 		if (frm.doc.enabled && frm.doc.client_id && frm.doc.client_secret) {
 			if (frm.doc.sync_status === 'Non connecté' || frm.doc.sync_status === 'Erreur') {
@@ -141,6 +146,28 @@ function load_calendars_into_table(frm) {
 					title: __('Erreur'),
 					indicator: 'red',
 					message: r.message.message || __('Impossible de récupérer la liste')
+				});
+			}
+		}
+	});
+}
+
+function setup_custom_fields(frm) {
+	frappe.call({
+		method: 'reunion.meeting_management.api.setup_custom_fields.setup',
+		freeze: true,
+		freeze_message: __('Création des custom fields...'),
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: __('Custom fields créés avec succès !'),
+					indicator: 'green'
+				});
+			} else {
+				frappe.msgprint({
+					title: __('Erreur'),
+					indicator: 'red',
+					message: r.message.message || __('Erreur lors de la création des custom fields')
 				});
 			}
 		}
