@@ -12,12 +12,8 @@ frappe.ui.form.on('Google Calendar Settings', {
 			}
 
 			if (frm.doc.sync_status === 'Connecté') {
-				frm.add_custom_button(__('Informations du calendrier'), function() {
-					show_calendar_info(frm);
-				}, __('Actions'));
-
-				frm.add_custom_button(__('Liste des calendriers'), function() {
-					show_calendars_list(frm);
+				frm.add_custom_button(__('Charger les calendriers'), function() {
+					load_calendars_into_table(frm);
 				}, __('Actions'));
 
 				frm.add_custom_button(__('Synchroniser maintenant'), function() {
@@ -41,10 +37,7 @@ frappe.ui.form.on('Google Calendar Settings', {
 	},
 
 	enabled: function(frm) {
-		if (!frm.doc.enabled) {
-			frm.set_value('sync_from_google', 0);
-			frm.set_value('sync_to_google', 0);
-		}
+		// Placeholder pour futures validations
 	}
 });
 
@@ -115,99 +108,33 @@ function disconnect_google(frm) {
 	);
 }
 
-function show_calendar_info(frm) {
-	frappe.call({
-		method: 'reunion.meeting_management.api.google_calendar.get_calendar_info',
-		freeze: true,
-		freeze_message: __('Récupération des informations...'),
-		callback: function(r) {
-			if (r.message && r.message.success) {
-				let cal = r.message.calendar;
-				let html = `
-					<table class="table table-bordered">
-						<tr>
-							<th style="width: 30%">ID du calendrier</th>
-							<td>${cal.id}</td>
-						</tr>
-						<tr>
-							<th>Nom</th>
-							<td>${cal.summary || '-'}</td>
-						</tr>
-						<tr>
-							<th>Description</th>
-							<td>${cal.description || '-'}</td>
-						</tr>
-						<tr>
-							<th>Fuseau horaire</th>
-							<td>${cal.timeZone}</td>
-						</tr>
-						<tr>
-							<th>Calendrier principal</th>
-							<td>${cal.is_primary ? '<span class="indicator green">Oui</span>' : '<span class="indicator grey">Non</span>'}</td>
-						</tr>
-					</table>
-				`;
-
-				frappe.msgprint({
-					title: __('Informations du calendrier connecté'),
-					indicator: 'blue',
-					message: html
-				});
-			} else {
-				frappe.msgprint({
-					title: __('Erreur'),
-					indicator: 'red',
-					message: r.message.message || __('Impossible de récupérer les informations')
-				});
-			}
-		}
-	});
-}
-
-function show_calendars_list(frm) {
+function load_calendars_into_table(frm) {
 	frappe.call({
 		method: 'reunion.meeting_management.api.google_calendar.list_calendars',
 		freeze: true,
-		freeze_message: __('Récupération de la liste...'),
+		freeze_message: __('Récupération de la liste des calendriers...'),
 		callback: function(r) {
 			if (r.message && r.message.success) {
 				let calendars = r.message.calendars;
-				let html = `
-					<p><strong>${calendars.length} calendrier(s) disponible(s)</strong></p>
-					<table class="table table-bordered">
-						<thead>
-							<tr>
-								<th>Nom</th>
-								<th>ID</th>
-								<th>Accès</th>
-								<th>Principal</th>
-							</tr>
-						</thead>
-						<tbody>
-				`;
 
+				// Vider la table actuelle
+				frm.clear_table('calendars_to_sync');
+
+				// Ajouter chaque calendrier
 				calendars.forEach(cal => {
-					html += `
-						<tr>
-							<td><strong>${cal.summary}</strong></td>
-							<td><small>${cal.id}</small></td>
-							<td><span class="badge">${cal.access_role}</span></td>
-							<td>${cal.primary ? '<span class="indicator green">Oui</span>' : '-'}</td>
-						</tr>
-					`;
+					let row = frm.add_child('calendars_to_sync');
+					row.calendar_id = cal.id;
+					row.calendar_name = cal.summary;
+					row.description = cal.description || '';
+					row.enabled = cal.primary ? 1 : 0; // Activer automatiquement le calendrier principal
+					row.sync_to_doctype = 'Event'; // Par défaut synchroniser vers Event
 				});
 
-				html += `
-						</tbody>
-					</table>
-					<p class="text-muted"><small>Pour changer de calendrier, modifiez le champ "Calendar ID" avec l'un des IDs ci-dessus.</small></p>
-				`;
+				frm.refresh_field('calendars_to_sync');
 
-				frappe.msgprint({
-					title: __('Liste des calendriers Google'),
-					indicator: 'blue',
-					message: html,
-					wide: true
+				frappe.show_alert({
+					message: __('${calendars.length} calendrier(s) chargé(s). Configurez-les et enregistrez.'),
+					indicator: 'green'
 				});
 			} else {
 				frappe.msgprint({

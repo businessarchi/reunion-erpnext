@@ -10,8 +10,6 @@
   "section_break_2",
   "client_id",
   "client_secret",
-  "column_break_4",
-  "calendar_id",
   "section_break_6",
   "access_token",
   "refresh_token",
@@ -19,8 +17,8 @@
   "column_break_10",
   "sync_status",
   "last_sync",
-  "sync_from_google",
-  "sync_to_google"
+  "section_break_calendars",
+  "calendars_to_sync"
  ],
  "fields": [
   {
@@ -45,17 +43,6 @@
    "fieldtype": "Password",
    "label": "Client Secret",
    "reqd": 1
-  },
-  {
-   "fieldname": "column_break_4",
-   "fieldtype": "Column Break"
-  },
-  {
-   "default": "primary",
-   "description": "ID du calendrier Google \u00e0 synchroniser (ex: primary ou votre email)",
-   "fieldname": "calendar_id",
-   "fieldtype": "Data",
-   "label": "Calendar ID"
   },
   {
    "fieldname": "section_break_6",
@@ -99,18 +86,15 @@
    "read_only": 1
   },
   {
-   "default": "1",
-   "description": "Importer les \u00e9v\u00e9nements de Google Calendar vers ERPNext",
-   "fieldname": "sync_from_google",
-   "fieldtype": "Check",
-   "label": "Synchroniser depuis Google"
+   "fieldname": "section_break_calendars",
+   "fieldtype": "Section Break",
+   "label": "Calendriers \u00e0 synchroniser"
   },
   {
-   "default": "1",
-   "description": "Exporter les r\u00e9unions ERPNext vers Google Calendar",
-   "fieldname": "sync_to_google",
-   "fieldtype": "Check",
-   "label": "Synchroniser vers Google"
+   "fieldname": "calendars_to_sync",
+   "fieldtype": "Table",
+   "label": "Calendriers",
+   "options": "Google Calendar Sync Config"
   }
  ],
  "index_web_pages_for_search": 1,
