@@ -26,8 +26,12 @@ frappe.ui.form.on('Google Calendar Settings', {
 					load_calendars_into_table(frm);
 				}, __('Actions'));
 
-				frm.add_custom_button(__('Synchroniser maintenant'), function() {
-					sync_now(frm);
+				frm.add_custom_button(__('Synchroniser depuis Google'), function() {
+					sync_from_google_now(frm);
+				}, __('Actions'));
+
+				frm.add_custom_button(__('Synchroniser vers Google'), function() {
+					sync_to_google_now(frm);
 				}, __('Actions'));
 
 				frm.add_custom_button(__('Déconnecter'), function() {
@@ -75,15 +79,38 @@ function connect_to_google(frm) {
 	});
 }
 
-function sync_now(frm) {
+function sync_from_google_now(frm) {
 	frappe.call({
 		method: 'reunion.meeting_management.api.google_calendar.sync_from_google',
 		freeze: true,
-		freeze_message: __('Synchronisation en cours...'),
+		freeze_message: __('Synchronisation depuis Google en cours...'),
 		callback: function(r) {
 			if (r.message && r.message.success) {
 				frappe.show_alert({
 					message: __('Synchronisation réussie ! {0} événements importés', [r.message.events_synced || 0]),
+					indicator: 'green'
+				});
+				frm.reload_doc();
+			} else {
+				frappe.msgprint({
+					title: __('Erreur'),
+					indicator: 'red',
+					message: r.message.message || __('Erreur lors de la synchronisation')
+				});
+			}
+		}
+	});
+}
+
+function sync_to_google_now(frm) {
+	frappe.call({
+		method: 'reunion.meeting_management.api.google_calendar.sync_to_google',
+		freeze: true,
+		freeze_message: __('Synchronisation vers Google en cours...'),
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				frappe.show_alert({
+					message: __('Synchronisation réussie ! {0} événements exportés', [r.message.events_synced || 0]),
 					indicator: 'green'
 				});
 				frm.reload_doc();

@@ -142,23 +142,14 @@ after_install = "reunion.meeting_management.api.add_google_calendar_fields.add_c
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"frappe_app.tasks.all"
-# 	],
-# 	"daily": [
-# 		"frappe_app.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"frappe_app.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"frappe_app.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"frappe_app.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+	# Synchronisation Google Calendar toutes les 15 minutes
+	"cron": {
+		"*/15 * * * *": [
+			"reunion.meeting_management.api.google_calendar.sync_bidirectional"
+		]
+	}
+}
 
 # Testing
 # -------

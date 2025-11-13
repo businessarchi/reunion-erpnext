@@ -145,10 +145,10 @@ def sync_from_google():
 		# Construire le service Google Calendar API
 		service = build('calendar', 'v3', credentials=credentials)
 
-		# Récupérer les événements des 30 derniers jours et 90 jours à venir
+		# Récupérer les événements : 1 mois avant aujourd'hui et 2 mois après aujourd'hui
 		now = datetime.utcnow()
-		time_min = (now - timedelta(days=30)).isoformat() + 'Z'
-		time_max = (now + timedelta(days=90)).isoformat() + 'Z'
+		time_min = (now - timedelta(days=30)).isoformat() + 'Z'  # 1 mois avant
+		time_max = (now + timedelta(days=60)).isoformat() + 'Z'  # 2 mois après
 
 		total_events_synced = 0
 		total_tasks_synced = 0
@@ -366,15 +366,13 @@ def sync_event_to_task(google_event, calendar_id):
 
 
 @frappe.whitelist()
-def sync_to_google(meeting_name):
+def sync_to_google():
 	"""
-	Exporte une réunion ERPNext vers Google Calendar
-
-	Args:
-		meeting_name: Nom du document Meeting
+	Synchronise les événements ERPNext vers Google Calendar
+	Exporte tous les événements modifiés depuis la dernière synchro
 
 	Returns:
-		dict: {"success": bool, "event_id": str, "message": str}
+		dict: {"success": bool, "events_synced": int, "message": str}
 	"""
 	try:
 		credentials = get_credentials()
@@ -387,18 +385,43 @@ def sync_to_google(meeting_name):
 
 		settings = frappe.get_doc("Google Calendar Settings", "Google Calendar Settings")
 
-		if not settings.sync_to_google:
+		# Vérifier qu'il y a des calendriers configurés
+		if not settings.calendars_to_sync:
 			return {
 				"success": False,
-				"message": _("La synchronisation vers Google est désactivée")
+				"message": _("Aucun calendrier configuré")
 			}
 
-		# TODO: Récupérer le document Meeting et créer l'événement dans Google Calendar
-		# Cela nécessitera le doctype Meeting/Réunion
+		# Construire le service Google Calendar API
+		service = build('calendar', 'v3', credentials=credentials)
+
+		# Récupérer tous les événements ERPNext qui ont un google_event_id
+		# (ce sont ceux qui ont été synchronisés depuis Google)
+		events_to_sync = frappe.db.get_all('Event',
+			filters={
+				'google_event_id': ['!=', ''],
+				'google_calendar_id': ['!=', '']
+			},
+			fields=['name', 'subject', 'description', 'location', 'starts_on', 'ends_on',
+					'all_day', 'status', 'google_event_id', 'google_calendar_id', 'modified']
+		)
+
+		events_synced = 0
+
+		for event in events_to_sync:
+			try:
+				sync_erpnext_event_to_google(service, event)
+				events_synced += 1
+			except Exception as e:
+				frappe.log_error(
+					f"Error syncing event {event.name} to Google: {str(e)}\n{frappe.get_traceback()}",
+					"Google Calendar - Sync To Google Single Event Error"
+				)
 
 		return {
-			"success": False,
-			"message": _("Fonction non encore implémentée - En attente du doctype Meeting")
+			"success": True,
+			"events_synced": events_synced,
+			"message": _("Synchronisation vers Google réussie: {0} événement(s)").format(events_synced)
 		}
 
 	except Exception as e:
@@ -407,3 +430,79 @@ def sync_to_google(meeting_name):
 			"success": False,
 			"message": str(e)
 		}
+
+
+def sync_erpnext_event_to_google(service, event):
+	"""
+	Synchronise un événement ERPNext vers Google Calendar
+
+	Args:
+		service: Service Google Calendar API
+		event: Document Event ERPNext (dict)
+	"""
+	# Construire l'événement Google Calendar
+	google_event = {
+		'summary': event.get('subject', 'Sans titre'),
+		'description': event.get('description', ''),
+		'location': event.get('location', ''),
+	}
+
+	# Gérer les dates
+	if event.get('all_day'):
+		# Événement all-day
+		start_date = event['starts_on'].split(' ')[0] if isinstance(event['starts_on'], str) else event['starts_on'].strftime('%Y-%m-%d')
+		end_date = event['ends_on'].split(' ')[0] if isinstance(event['ends_on'], str) else event['ends_on'].strftime('%Y-%m-%d')
+
+		google_event['start'] = {'date': start_date}
+		google_event['end'] = {'date': end_date}
+	else:
+		# Événement avec heure - convertir en ISO 8601 avec timezone
+		from datetime import datetime
+		import pytz
+
+		# Parser les dates MySQL
+		if isinstance(event['starts_on'], str):
+			starts_on = datetime.strptime(event['starts_on'], '%Y-%m-%d %H:%M:%S')
+			ends_on = datetime.strptime(event['ends_on'], '%Y-%m-%d %H:%M:%S')
+		else:
+			starts_on = event['starts_on']
+			ends_on = event['ends_on']
+
+		# Ajouter timezone (UTC par défaut)
+		tz = pytz.UTC
+		starts_on = tz.localize(starts_on) if starts_on.tzinfo is None else starts_on
+		ends_on = tz.localize(ends_on) if ends_on.tzinfo is None else ends_on
+
+		google_event['start'] = {'dateTime': starts_on.isoformat()}
+		google_event['end'] = {'dateTime': ends_on.isoformat()}
+
+	# Mettre à jour l'événement dans Google Calendar
+	service.events().update(
+		calendarId=event['google_calendar_id'],
+		eventId=event['google_event_id'],
+		body=google_event
+	).execute()
+
+
+def sync_bidirectional():
+	"""
+	Fonction pour synchronisation bidirectionnelle automatique
+	Appelée par le Scheduled Job
+	"""
+	try:
+		settings = frappe.get_doc("Google Calendar Settings", "Google Calendar Settings")
+
+		# Vérifier que la synchronisation est activée
+		if not settings.enabled or settings.sync_status != "Connecté":
+			return
+
+		# Synchroniser Google → ERPNext
+		result_from_google = sync_from_google()
+
+		# Synchroniser ERPNext → Google
+		result_to_google = sync_to_google()
+
+		frappe.logger().info(f"Bidirectional sync completed: {result_from_google}, {result_to_google}")
+
+	except Exception as e:
+		frappe.log_error(frappe.get_traceback(), "Google Calendar - Bidirectional Sync Error")
