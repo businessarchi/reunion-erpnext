@@ -9,6 +9,7 @@ import frappe
 from frappe import _
 from googleapiclient.discovery import build
 from datetime import datetime, timedelta
+from dateutil import parser as dateutil_parser
 from reunion.meeting_management.api.google_auth import get_credentials
 
 
@@ -259,10 +260,16 @@ def sync_event_to_erpnext(google_event, calendar_id):
 	end = google_event.get('end', {})
 
 	if 'dateTime' in start:
-		starts_on = start['dateTime']
-		ends_on = end['dateTime']
+		# Parser les dates ISO 8601 avec timezone et convertir en format MySQL
+		start_dt = dateutil_parser.parse(start['dateTime'])
+		end_dt = dateutil_parser.parse(end['dateTime'])
+
+		# Convertir au format MySQL (YYYY-MM-DD HH:MM:SS)
+		starts_on = start_dt.strftime('%Y-%m-%d %H:%M:%S')
+		ends_on = end_dt.strftime('%Y-%m-%d %H:%M:%S')
 		all_day = 0
 	else:
+		# Événements all-day (date uniquement)
 		starts_on = start['date'] + ' 00:00:00'
 		ends_on = end['date'] + ' 23:59:59'
 		all_day = 1
