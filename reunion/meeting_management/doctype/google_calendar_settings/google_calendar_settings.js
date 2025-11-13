@@ -8,6 +8,11 @@ frappe.ui.form.on('Google Calendar Settings', {
 			setup_custom_fields(frm);
 		}, __('Admin'));
 
+		// Bouton Check Events
+		frm.add_custom_button(__('🔍 Vérifier les événements'), function() {
+			check_events(frm);
+		}, __('Admin'));
+
 		// Ajouter le bouton de connexion Google
 		if (frm.doc.enabled && frm.doc.client_id && frm.doc.client_secret) {
 			if (frm.doc.sync_status === 'Non connecté' || frm.doc.sync_status === 'Erreur') {
@@ -168,6 +173,66 @@ function setup_custom_fields(frm) {
 					title: __('Erreur'),
 					indicator: 'red',
 					message: r.message.message || __('Erreur lors de la création des custom fields')
+				});
+			}
+		}
+	});
+}
+
+function check_events(frm) {
+	frappe.call({
+		method: 'reunion.meeting_management.api.check_events.check',
+		freeze: true,
+		freeze_message: __('Vérification...'),
+		callback: function(r) {
+			if (r.message && r.message.success) {
+				let html = `
+					<h4>Statistiques:</h4>
+					<ul>
+						<li><strong>Events totaux:</strong> ${r.message.total_events}</li>
+						<li><strong>Events Google Calendar:</strong> ${r.message.events_with_google}</li>
+						<li><strong>Tasks totaux:</strong> ${r.message.total_tasks}</li>
+						<li><strong>Tasks Google Calendar:</strong> ${r.message.tasks_with_google}</li>
+					</ul>
+
+					<h4>Exemples d'événements Google:</h4>
+					<table class="table table-bordered">
+						<thead>
+							<tr>
+								<th>ID</th>
+								<th>Sujet</th>
+								<th>Date</th>
+							</tr>
+						</thead>
+						<tbody>
+				`;
+
+				r.message.sample_events.forEach(evt => {
+					html += `
+						<tr>
+							<td><a href="/app/event/${evt.name}">${evt.name}</a></td>
+							<td>${evt.subject}</td>
+							<td>${evt.starts_on}</td>
+						</tr>
+					`;
+				});
+
+				html += `
+						</tbody>
+					</table>
+				`;
+
+				frappe.msgprint({
+					title: __('Événements synchronisés'),
+					indicator: 'blue',
+					message: html,
+					wide: true
+				});
+			} else {
+				frappe.msgprint({
+					title: __('Erreur'),
+					indicator: 'red',
+					message: r.message.message || __('Erreur lors de la vérification')
 				});
 			}
 		}
