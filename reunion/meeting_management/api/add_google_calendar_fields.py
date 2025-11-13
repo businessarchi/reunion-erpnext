@@ -10,6 +10,29 @@ def add_custom_fields():
 	"""Ajoute les custom fields pour la synchronisation Google Calendar"""
 	from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
+	# D'abord, supprimer les custom fields existants qui n'ont pas de colonnes DB
+	doctypes = ['Event', 'Task']
+	fieldnames = ['google_event_id', 'google_calendar_id']
+
+	for doctype in doctypes:
+		for fieldname in fieldnames:
+			# Supprimer le custom field s'il existe
+			if frappe.db.exists('Custom Field', {'dt': doctype, 'fieldname': fieldname}):
+				try:
+					frappe.delete_doc('Custom Field',
+						frappe.db.get_value('Custom Field',
+							{'dt': doctype, 'fieldname': fieldname},
+							'name'
+						),
+						ignore_permissions=True,
+						force=True
+					)
+					print(f"✓ Deleted existing custom field: {doctype}.{fieldname}")
+				except Exception as e:
+					print(f"⚠ Could not delete {doctype}.{fieldname}: {str(e)}")
+
+	frappe.db.commit()
+
 	# Custom fields pour Event et Task
 	custom_fields = {
 		'Event': [
