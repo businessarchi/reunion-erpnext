@@ -173,12 +173,19 @@ def sync_from_google():
 
 				# Synchroniser chaque événement vers le DocType configuré
 				for event in events:
-					if cal_config.sync_to_doctype == "Event":
-						sync_event_to_erpnext(event, cal_config.calendar_id)
-						total_events_synced += 1
-					elif cal_config.sync_to_doctype == "Task":
-						sync_event_to_task(event, cal_config.calendar_id)
-						total_tasks_synced += 1
+					try:
+						if cal_config.sync_to_doctype == "Event":
+							sync_event_to_erpnext(event, cal_config.calendar_id)
+							total_events_synced += 1
+						elif cal_config.sync_to_doctype == "Task":
+							sync_event_to_task(event, cal_config.calendar_id)
+							total_tasks_synced += 1
+					except Exception as e:
+						# Log mais ne pas arrêter la synchronisation
+						frappe.log_error(
+							f"Error syncing event {event.get('id', 'unknown')}: {str(e)}\n{frappe.get_traceback()}",
+							f"Google Calendar - Sync Single Event Error"
+						)
 
 				calendars_processed += 1
 
@@ -241,68 +248,59 @@ def sync_event_to_erpnext(google_event, calendar_id):
 		google_event: Événement Google Calendar (dict)
 		calendar_id: ID du calendrier source
 	"""
-	try:
-		# Extraire les données de l'événement Google
-		google_event_id = google_event.get('id')
-		summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
-		description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
-		location = google_event.get('location', '')[:140]
+	# Extraire les données de l'événement Google
+	google_event_id = google_event.get('id')
+	summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
+	description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
+	location = google_event.get('location', '')[:140]
 
-		# Gérer les dates (événements all-day vs avec heure)
-		start = google_event.get('start', {})
-		end = google_event.get('end', {})
+	# Gérer les dates (événements all-day vs avec heure)
+	start = google_event.get('start', {})
+	end = google_event.get('end', {})
 
-		if 'dateTime' in start:
-			starts_on = start['dateTime']
-			ends_on = end['dateTime']
-			all_day = 0
-		else:
-			starts_on = start['date'] + ' 00:00:00'
-			ends_on = end['date'] + ' 23:59:59'
-			all_day = 1
+	if 'dateTime' in start:
+		starts_on = start['dateTime']
+		ends_on = end['dateTime']
+		all_day = 0
+	else:
+		starts_on = start['date'] + ' 00:00:00'
+		ends_on = end['date'] + ' 23:59:59'
+		all_day = 1
 
-		# Vérifier si l'événement existe déjà (par google_event_id)
-		existing = frappe.db.exists('Event', {
+	# Vérifier si l'événement existe déjà (par google_event_id)
+	existing = frappe.db.exists('Event', {
+		'google_event_id': google_event_id,
+		'google_calendar_id': calendar_id
+	})
+
+	if existing:
+		# Mettre à jour l'événement existant
+		event_doc = frappe.get_doc('Event', existing)
+		event_doc.subject = summary
+		event_doc.description = description
+		event_doc.location = location
+		event_doc.starts_on = starts_on
+		event_doc.ends_on = ends_on
+		event_doc.all_day = all_day
+		event_doc.save(ignore_permissions=True)
+	else:
+		# Créer un nouvel événement
+		event_doc = frappe.get_doc({
+			'doctype': 'Event',
+			'subject': summary,
+			'description': description,
+			'location': location,
+			'starts_on': starts_on,
+			'ends_on': ends_on,
+			'all_day': all_day,
 			'google_event_id': google_event_id,
-			'google_calendar_id': calendar_id
+			'google_calendar_id': calendar_id,
+			'event_type': 'Public',  # Par défaut
+			'status': 'Open'
 		})
+		event_doc.insert(ignore_permissions=True)
 
-		if existing:
-			# Mettre à jour l'événement existant
-			event_doc = frappe.get_doc('Event', existing)
-			event_doc.subject = summary
-			event_doc.description = description
-			event_doc.location = location
-			event_doc.starts_on = starts_on
-			event_doc.ends_on = ends_on
-			event_doc.all_day = all_day
-			event_doc.save(ignore_permissions=True)
-		else:
-			# Créer un nouvel événement
-			event_doc = frappe.get_doc({
-				'doctype': 'Event',
-				'subject': summary,
-				'description': description,
-				'location': location,
-				'starts_on': starts_on,
-				'ends_on': ends_on,
-				'all_day': all_day,
-				'google_event_id': google_event_id,
-				'google_calendar_id': calendar_id,
-				'event_type': 'Public',  # Par défaut
-				'status': 'Open'
-			})
-			event_doc.insert(ignore_permissions=True)
-
-		frappe.db.commit()
-
-	except Exception as e:
-		# Tronquer l'ID pour éviter que le titre soit trop long (max 140 chars)
-		event_id = str(google_event.get('id', 'unknown'))[:50]
-		frappe.log_error(
-			frappe.get_traceback(),
-			f"GCal Sync Event Error: {event_id}"
-		)
+	frappe.db.commit()
 
 
 def sync_event_to_task(google_event, calendar_id):
@@ -313,60 +311,51 @@ def sync_event_to_task(google_event, calendar_id):
 		google_event: Événement Google Calendar (dict)
 		calendar_id: ID du calendrier source
 	"""
-	try:
-		# Extraire les données de l'événement Google
-		google_event_id = google_event.get('id')
-		summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
-		description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
+	# Extraire les données de l'événement Google
+	google_event_id = google_event.get('id')
+	summary = google_event.get('summary', 'Sans titre')[:140]  # Limiter à 140 caractères
+	description = google_event.get('description', '')[:5000]  # Limiter à 5000 caractères
 
-		# Gérer les dates
-		start = google_event.get('start', {})
-		end = google_event.get('end', {})
+	# Gérer les dates
+	start = google_event.get('start', {})
+	end = google_event.get('end', {})
 
-		if 'dateTime' in start:
-			exp_start_date = start['dateTime'].split('T')[0]
-			exp_end_date = end['dateTime'].split('T')[0]
-		else:
-			exp_start_date = start['date']
-			exp_end_date = end['date']
+	if 'dateTime' in start:
+		exp_start_date = start['dateTime'].split('T')[0]
+		exp_end_date = end['dateTime'].split('T')[0]
+	else:
+		exp_start_date = start['date']
+		exp_end_date = end['date']
 
-		# Vérifier si la tâche existe déjà
-		existing = frappe.db.exists('Task', {
+	# Vérifier si la tâche existe déjà
+	existing = frappe.db.exists('Task', {
+		'google_event_id': google_event_id,
+		'google_calendar_id': calendar_id
+	})
+
+	if existing:
+		# Mettre à jour la tâche existante
+		task_doc = frappe.get_doc('Task', existing)
+		task_doc.subject = summary
+		task_doc.description = description
+		task_doc.exp_start_date = exp_start_date
+		task_doc.exp_end_date = exp_end_date
+		task_doc.save(ignore_permissions=True)
+	else:
+		# Créer une nouvelle tâche
+		task_doc = frappe.get_doc({
+			'doctype': 'Task',
+			'subject': summary,
+			'description': description,
+			'exp_start_date': exp_start_date,
+			'exp_end_date': exp_end_date,
 			'google_event_id': google_event_id,
-			'google_calendar_id': calendar_id
+			'google_calendar_id': calendar_id,
+			'status': 'Open'
 		})
+		task_doc.insert(ignore_permissions=True)
 
-		if existing:
-			# Mettre à jour la tâche existante
-			task_doc = frappe.get_doc('Task', existing)
-			task_doc.subject = summary
-			task_doc.description = description
-			task_doc.exp_start_date = exp_start_date
-			task_doc.exp_end_date = exp_end_date
-			task_doc.save(ignore_permissions=True)
-		else:
-			# Créer une nouvelle tâche
-			task_doc = frappe.get_doc({
-				'doctype': 'Task',
-				'subject': summary,
-				'description': description,
-				'exp_start_date': exp_start_date,
-				'exp_end_date': exp_end_date,
-				'google_event_id': google_event_id,
-				'google_calendar_id': calendar_id,
-				'status': 'Open'
-			})
-			task_doc.insert(ignore_permissions=True)
-
-		frappe.db.commit()
-
-	except Exception as e:
-		# Tronquer l'ID pour éviter que le titre soit trop long (max 140 chars)
-		event_id = str(google_event.get('id', 'unknown'))[:50]
-		frappe.log_error(
-			frappe.get_traceback(),
-			f"GCal Sync Task Error: {event_id}"
-		)
+	frappe.db.commit()
 
 
 @frappe.whitelist()
